@@ -1,48 +1,55 @@
 import csv
 import os
 
-file_load = os.join("Resources", "election_data.csv")
-file_output = os.path.join("Desktop")
+file_load = os.join("Resources", "budget_data.csv")
+file_out = os.path.join("Desktop")
 
-vote_total = 0
+month_total = 0
+month_change = []
+change_list = [] 
+max_increase = ["", 0]
+max_decrease = ["", 999999999999999]
+net_total = 0 
 
-candidates = []
-candidates_votes = {}
-winner = ""
-winner_votes = 0 
+with open(file_load) as fin_data:
+    reader = csv.reader(fin_data)
 
-with open(file_load) as election_data:
-    reader = csv.reader(election_data)
     header = next(reader)
+
+    first_row = next(reader)
+    month_total = month_total + 1 
+    net_total = net_total + int(first_row[1])
+    prev_for_net = int(first_row[1])
+
     for row in reader:
+        month_total = month_total + 1 
+        net_total = net_total + int(first_row[1])
+        net_change = int(row[1]) - prev_for_net
+        prev_for_net = int(row[1])
+        change_list = change_list + [net_change]
+        month_change = month_change + [row[0]]
+
+        if net_change > max_increase[1]:
+            max_increase[0] = row[0]
+            max_increase[1] = net_total
     
-        vote_total = vote_total + 1 
-        name = row[2]
-        if name not in candidates:
-            candidates.append(name)
-            candidates_votes[name] = 0 
-            candidates_votes[name] = candidates_votes[name] + 1 
-with open(file_output, "w") as txt_file:
-    results = (
-        f'Election Results\n'
-        f'------------\n'
-        f'Total Votes: {vote_total}\n'
-        f'------------------\n')
-print(results, end="")
+        if net_change < max_decrease[1]:
+            max_decrease[0] = row[0]
+            max_decrease[1] = net_total
 
+net_avg = sum(change_list) / len(change_list)
 
-for candidate in candidates_votes:
-    votes = candidates_votes.get(candidate)
-    vote_percent = float(votes) / float(vote_total) * 100
-    if (votes > winner_votes):
-        winner_votes = votes
-        winner = candidate
-        vote_output = f'{candidate}: {vote_percent:.3f}% ({votes})\n'
-print(vote_output, end="")
+output = (
+    f'Financial Analysis\n'
+    f'---------------\n'
+    f'Total Months: {month_total}\n'
+    f'Total: {net_total}\n'
+    f'Average Change: {net_avg:.2f}\n'
+    f'Greatest Increase in Profits: {max_increase[0]} (${max_increase[1]})\n'
+    f'Greatest Decrease in Profits: {max_decrease[0]} (${max_decrease[1]})\n'
 
+)
+print(output)
 
-Winning_Candidate_Sum = (
-f'----------------------\n'
-f'Winner: {winner}\n'
-        )
-print(Winning_Candidate_Sum)
+with open(file_out, "w") as txt_file:
+    txt_file.write(output)
